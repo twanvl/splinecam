@@ -1,3 +1,5 @@
+This is a fork of the SplineCam repository, that fixes the code to work with 2024 pytorch, and makes it run on non-cuda devices.
+
 ## *SplineCam*: Exact Visualization and Characterization of Deep Network Geometry and Decision Boundaries, CVPR 2023
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://bit.ly/splinecam-demo)
 
