@@ -27,7 +27,7 @@ def plot_partition(cycles,ax=None,xlims=[-2,2],ylims=[-2,2],
     if colors is None:
     
         for cyc in tqdm.tqdm(cycles,total=len(cycles)):
-                polygon = mpl_Polygon(cyc, True, facecolor=mpl_colors.rgb2hex(
+                polygon = mpl_Polygon(cyc, closed=True, facecolor=mpl_colors.rgb2hex(
                     np.clip(np.random.rand(3),color_range[0],color_range[1])
                 ))
                 polygon.set_edgecolor(edgecolor)
@@ -38,7 +38,7 @@ def plot_partition(cycles,ax=None,xlims=[-2,2],ylims=[-2,2],
     elif len(colors) != len(cycles):
         
         for cyc in tqdm.tqdm(cycles,total=len(cycles)):
-                polygon = mpl_Polygon(cyc, True, facecolor=colors[np.random.randint(0,len(colors))])
+                polygon = mpl_Polygon(cyc, closed=True, facecolor=colors[np.random.randint(0,len(colors))])
                 polygon.set_edgecolor(edgecolor)
                 polygon.set_linewidth(linewidth)
                 polygon.set_alpha(alpha)
@@ -47,7 +47,7 @@ def plot_partition(cycles,ax=None,xlims=[-2,2],ylims=[-2,2],
     elif len(colors) == len(cycles):
         
         for cyc,col in tqdm.tqdm(zip(cycles,colors),total=len(cycles)):
-                polygon = mpl_Polygon(cyc, True, facecolor=col)
+                polygon = mpl_Polygon(cyc, closed=True, facecolor=col)
                 polygon.set_edgecolor(edgecolor)
                 polygon.set_linewidth(linewidth)
                 polygon.set_alpha(alpha)

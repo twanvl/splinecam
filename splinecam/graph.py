@@ -1,3 +1,6 @@
+from graph_tool import topology # Put this first to load correct version of libgomp
+                                # if this is after `import torch`, then the .so from torch will be used instead of the system one
+
 import torch
 import numpy as np
 
@@ -61,7 +64,7 @@ def get_intersection_pattern(poly,hyps):
 @torch.jit.script
 def edge_hyp_intersections(qT,poly,hyps):
     '''
-    Intersection cases for q \in {1,0}
+    Intersection cases for q ∈ {1,0}
     1. intersects two edges of polytope: two change of symbols for two different set of edges; two changes in q in a row
     4. intersects one vertex: only one zero and no change of symbol on two sides of zero; two consecutive changes in q
     '''
@@ -750,7 +753,7 @@ def to_next_layer_partition(cycles, Abw, current_layer, NN, dtype=torch.float64,
     
     return res_regions, new_cyc_idx
 
-def _batched_gpu_op(method, data, batch_size, out_size, dtype=torch.float32, workers=2, out_device='cpu'):
+def _batched_gpu_op(method, data, batch_size, out_size, dtype=torch.float32, workers=2, device='cuda', out_device='cpu'):
     
     dataloadr = torch.utils.data.DataLoader(data,
                                       pin_memory=False,
@@ -766,7 +769,7 @@ def _batched_gpu_op(method, data, batch_size, out_size, dtype=torch.float32, wor
     for in_batch in dataloadr:
         
         end  = start+in_batch.shape[0]
-        out_batch = method(in_batch.cuda())
+        out_batch = method(in_batch.to(device))
         out[start:end] = out_batch.to(out_device)
         start = end
 
@@ -786,7 +789,7 @@ class util_dataset(torch.utils.data.Dataset):
         return self.data1[idx], self.data2[idx]
 
 
-def _batched_gpu_op_2(method, data1, data2, batch_size, out_size, dtype=torch.float32, workers=2):
+def _batched_gpu_op_2(method, data1, data2, batch_size, out_size, dtype=torch.float32, workers=2, device='cuda'):
     
     assert data1.shape[0] == data2.shape[0]
     
@@ -804,7 +807,7 @@ def _batched_gpu_op_2(method, data1, data2, batch_size, out_size, dtype=torch.fl
     for in_batch1,in_batch2 in dataloadr:
         
         end  = start+in_batch1.shape[0]
-        out_batch = method(in_batch1.cuda(),in_batch2.cuda())
+        out_batch = method(in_batch1.to(device),in_batch2.to(device))
         out[start:end] = out_batch.cpu()
         start = end
 
@@ -830,7 +833,7 @@ def to_next_layer_partition_batched(cycles, Abw, current_layer, NN,
     fused_op = lambda x: NN.layers[current_layer].get_intersection_pattern(
         NN.layers[:current_layer].forward(x))
     
-        
+    
     q = _batched_gpu_op(fused_op, 
                         vec_cyc,
                         workers = workers,
@@ -838,7 +841,8 @@ def to_next_layer_partition_batched(cycles, Abw, current_layer, NN,
                             vec_cyc.shape[0],
                             torch.prod(NN.layers[current_layer].output_shape),
                         ),
-                        batch_size = fwd_batch_size, out_device='cpu')                                  
+                        batch_size = fwd_batch_size,
+                        device=device, out_device='cpu')
     
     
     n_hyps  = torch.prod(NN.layers[current_layer].output_shape)
@@ -876,7 +880,8 @@ def to_next_layer_partition_batched(cycles, Abw, current_layer, NN,
         batch_size = batch_size,
         out_size = (hyp_vert_cyc_idx[::2,0].shape[0],1,3),
         dtype = dtype,
-        workers = workers
+        workers = workers,
+        device = device,
     )[:,0,:]
         
     

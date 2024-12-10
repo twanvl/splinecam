@@ -323,7 +323,7 @@ class model_wrapper(object):
             
     @torch.no_grad()        
     def compose_layers(self,layers,layer_names):
-        
+        print("compose_layers@ ", self.device)
         global SUPPORTED_MODULES, SUPPORTED_ACT
         
         SUPPORTED_MODULES += self.custom_layers
@@ -341,7 +341,7 @@ class model_wrapper(object):
         
         for layer,name in zip(layers,layer_names):
             
-            print(f'Wrapping layer {name}...')
+            print(f'Wrapping layer {name} of type {type(layer)}...')
             
             if type(layer) == torch.nn.modules.linear.Linear:
                 new_layers.append(linear(layer,device=self.device,dtype=self.dtype))
@@ -544,13 +544,12 @@ class conv2d(torch.nn.Module):
         '''
         Get matrix representation of conv
         '''
-    
+        
         identity = torch.eye(
             torch.prod(
                 self.input_shape
             ).type(torch.int64), device='cpu', dtype=torch.float32
-        ).reshape(-1,self.input_shape[0],self.input_shape[1],self.input_shape[2]
-                 )
+        ).reshape(-1,self.input_shape[0],self.input_shape[1],self.input_shape[2])
         
         self.layer.type(torch.float32)
         
@@ -561,18 +560,14 @@ class conv2d(torch.nn.Module):
             
             c = c.type(torch.float32)
             b = b.type(torch.float32)
-            
         
         if self.has_bn and self.layer.bias is None:
-            
             method = lambda x: c[None,:,None,None]*self.layer.forward(x)
         
         elif self.has_bn and self.layer.bias is not None:
-        
             method = lambda x: c[None,:,None,None]*(self.layer.forward(x) - self.layer.bias[None,:,None,None])
         
         elif not self.has_bn and self.layer.bias is not None:
-            
             method = lambda x: self.layer.forward(x)-self.layer.bias[None,:,None,None]
             
         else:
@@ -580,9 +575,10 @@ class conv2d(torch.nn.Module):
             
         output = _batched_gpu_op(
             method = method, data=identity, batch_size=2048*2, dtype=torch.float32,workers=0,
-            out_size=(identity.shape[0],self.output_shape[0],self.output_shape[1],self.output_shape[2]) 
+            out_size=(identity.shape[0],self.output_shape[0],self.output_shape[1],self.output_shape[2]),
+            device = self.device
         )
-            
+        
 #         output = self.layer.forward(identity)
     
         W = output.reshape(-1, torch.prod(self.output_shape).type(torch.int64)).T
@@ -1042,7 +1038,8 @@ class avgpool2d(torch.nn.Module):
         output = _batched_gpu_op(
             method = self.layer.forward, data=identity, batch_size=2048*2,workers=0,
             dtype=torch.float32,
-            out_size=(identity.shape[0],self.output_shape[0],self.output_shape[1],self.output_shape[2]) 
+            out_size=(identity.shape[0],self.output_shape[0],self.output_shape[1],self.output_shape[2]),
+            device = self.device,
         )
         
         self.layer.type(self.dtype)

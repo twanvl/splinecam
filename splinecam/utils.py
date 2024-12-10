@@ -2,9 +2,10 @@ import numpy as np
 from scipy.spatial import ConvexHull
 import torch
 import warnings
+#from typing import float
 
 @torch.jit.script
-def region_eccentricity_2d(poly,eps=1e-10):
+def region_eccentricity_2d(poly,eps:float =1e-10):
     
     # pairwise distances between vertices
     dist = torch.pdist(poly[:-1])
@@ -189,7 +190,7 @@ def split_domain_by_edge(domain):
     return out_domain
 
 @torch.jit.script
-def get_square_slice_from_one_anchor(anchors,pad_dist=1,seed=None):
+def get_square_slice_from_one_anchor(anchors,pad_dist:float=1,seed=None):
     """
     Given one vector as an anchor, takes a randomly oriented slice with the anchor at the center
     """
@@ -216,7 +217,7 @@ def get_square_slice_from_one_anchor(anchors,pad_dist=1,seed=None):
 
 
 @torch.jit.script
-def get_square_slice_from_two_anchors(anchors,pad_dist=1,seed=-1):
+def get_square_slice_from_two_anchors(anchors,pad_dist:float=1,seed:int=-1):
     
     if not seed == -1: #None buggy for jit
         torch.manual_seed(seed)
@@ -238,7 +239,7 @@ def get_square_slice_from_two_anchors(anchors,pad_dist=1,seed=-1):
 
 
 @torch.jit.script
-def get_square_slice_from_centroid(anchors,pad_dist=1,seed=0,eps=1e-7):
+def get_square_slice_from_centroid(anchors,pad_dist:float=1,seed:int=0,eps:float=1e-7):
     
     assert len(anchors.shape) <= 2
     assert len(anchors) == 3

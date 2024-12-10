@@ -1,3 +1,4 @@
+
 import sys
 import os
 
@@ -6,6 +7,11 @@ import splinecam as sc
 
 import torch
 import matplotlib.pyplot as plt
+
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    device = torch.device("cpu")
 
 ### define model
 
@@ -41,14 +47,15 @@ NN = sc.wrappers.model_wrapper(
     model,
     input_shape=(3,32,32),
     T = T,
-    dtype = torch.float64
+    dtype = torch.float64,
+    device = device
 )
 
 print('forward and affine equivalency flag ', NN.verify())
 
 ### Compute regions and decision boundary
 
-out_cyc,endpoints,Abw = sc.compute.get_partitions_with_db(domain,T,NN)
+out_cyc,endpoints,Abw = sc.compute.get_partitions_with_db(domain,T,NN, device=device)
 
 ### Plot partitions
 
@@ -60,4 +67,4 @@ sc.plot.plot_partition(out_cyc, xlims=[minval[0],maxval[0]],alpha=0.3,
                          colors=['#469597', '#5BA199', '#BBC6C8', '#E5E3E4', '#DDBEAA'],
                          ylims=[minval[1],maxval[1]], linewidth=.5)
 
-plt.savefig('../figures/cnn_visualize.jpg',transparent=True, bbox_inches=0, pad_inches=0)
+plt.savefig('../figures/cnn_visualize.png',transparent=False, bbox_inches=0, pad_inches=0)

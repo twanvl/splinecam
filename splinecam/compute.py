@@ -137,6 +137,7 @@ def get_partitions_with_db(
     batch_size = 128,
     n_workers = 2,
     Abw_batch_size = 16,
+    device = 'cuda',
 ):
     
     poly = (T[...,:-1].T @ (domain.T - T[...,-1:])).T
@@ -162,6 +163,7 @@ def get_partitions_with_db(
             dtype = torch.float64,
             batch_size=batch_size,
             fwd_batch_size=fwd_batch_size,
+            device = device,
         )
 
         with torch.no_grad():
@@ -183,12 +185,13 @@ def get_partitions_with_db(
                             ),
                             dtype= torch.float32,
                             workers=n_workers,
+                            device = device,
                 )
 
 
             del means
 
-            Wb =  NN.layers[current_layer].get_weights(dtype=torch.float32).cuda()
+            Wb =  NN.layers[current_layer].get_weights(dtype=torch.float32).to(device)
             Abw = Abw.type(torch.float32)
 
             dloader = torch.utils.data.DataLoader(Abw,
@@ -207,10 +210,10 @@ def get_partitions_with_db(
                 end = start+in_batch.shape[0]
 
                 out_batch = utils.get_Abw(
-                        q = q[start:end].cuda(),
+                        q = q[start:end].to(device),
                         Wb = Wb.to_dense(),
-                        incoming_Abw = in_batch.cuda()
-                            ) 
+                        incoming_Abw = in_batch.to(device)
+                  ) 
 
                 out_Abw[start:end] = out_batch.cpu()
                 start = end
@@ -224,7 +227,7 @@ def get_partitions_with_db(
     
     try:
         hyp2input,endpoints = to_next_layer_partition_batched(out_cyc, Abw, -1, NN,
-                                        dtype=torch.float64, device='cuda',
+                                        dtype=torch.float64, device=device,
                                         batch_size=batch_size,
                                         fwd_batch_size=fwd_batch_size)
     except:

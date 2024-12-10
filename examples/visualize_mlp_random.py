@@ -9,6 +9,11 @@ import splinecam as sc
 import torch
 import matplotlib.pyplot as plt
 
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    device = torch.device("cpu")
+
 ### model definition
 
 in_shape = 10
@@ -28,11 +33,11 @@ for i in range(depth-1):
     layers.append(torch.nn.Linear(width,width))
     layers.append(torch.nn.BatchNorm1d(width))
     layers.append(act)
-    
+
 layers.append(torch.nn.Linear(width,out_shape))
 
 model = torch.nn.Sequential(*layers)
-model.cuda()
+model.to(device)
 
 model.eval()
 model.type(torch.float64)
@@ -52,14 +57,15 @@ NN = sc.wrappers.model_wrapper(
     model,
     input_shape=(in_shape,),
     T = T,
-    dtype = torch.float64
+    dtype = torch.float64,
+    device = device
 )
 
 print('forward and affine equivalency flag ', NN.verify())
 
 ### Compute regions and decision boundary
 
-out_cyc,endpoints,Abw = sc.compute.get_partitions_with_db(domain,T,NN)
+out_cyc,endpoints,Abw = sc.compute.get_partitions_with_db(domain,T,NN, device=device)
 
 ### Plot partitions
 
@@ -71,4 +77,4 @@ sc.plot.plot_partition(out_cyc, xlims=[minval[0],maxval[0]],alpha=0.3,
                          colors=['#469597', '#5BA199', '#BBC6C8', '#E5E3E4', '#DDBEAA'],
                          ylims=[minval[1],maxval[1]], linewidth=.5)
 
-plt.savefig('../figures/mlp_visualize.jpg',transparent=True, bbox_inches=0, pad_inches=0)
+plt.savefig('../figures/mlp_visualize.png',transparent=False, bbox_inches=0, pad_inches=0)
