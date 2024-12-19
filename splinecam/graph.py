@@ -431,7 +431,7 @@ def create_poly_hyp_graph(poly, hyps, q=None, hyp_endpoints=None, dtype=torch.fl
     # indices for new nodes
     new_node_idx = torch.from_numpy(
         np.asarray(range(new_node_start,new_node_start+v.shape[0]))
-    ).type(torch.int)
+    ).type(torch.int).to(poly.device)
 
     # create list of ordered vertices
     v_collect, hyp_v1_v2_idx_collect, node_names_collect = order_vertices_poly(v,hyp_v1_v2_idx,poly,new_node_idx)
@@ -456,7 +456,7 @@ def create_poly_hyp_graph(poly, hyps, q=None, hyp_endpoints=None, dtype=torch.fl
     
 #     hyp_endpoints = v.reshape(-1,2,v.shape[-1]) ## 
     hyp_endpoint_nodes = new_node_idx.reshape(-1,2)
-
+    hyp_endpoint_nodes = hyp_endpoint_nodes.to('cpu')
     
     # if combination idx empty, just connect the endpoints
     if uniq_hyp_idx.shape[0] <= 1: # < because of no intersection case ##TODO: check why no intersection here for deeper layers
@@ -516,6 +516,7 @@ def create_poly_hyp_graph(poly, hyps, q=None, hyp_endpoints=None, dtype=torch.fl
 
 
         mask = torch.logical_or(comb_idx[:,0] == each_hyp, comb_idx[:,1] == each_hyp)
+        mask = mask.to('cpu')
 
         if not(torch.sum(mask)): #hyp intersects at vertex, hence
             #came up as uniq hyp but didnt come up as combination

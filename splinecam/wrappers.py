@@ -286,7 +286,7 @@ class linear(torch.nn.Module):
     
 class model_wrapper(object):
     """
-    TODO: Complete docstring
+    A wrapper around a pytorch Module, that wraps an `adapter` around each layer.
     """
 
     

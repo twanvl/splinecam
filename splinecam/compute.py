@@ -70,7 +70,7 @@ def to_next_layer_partition_batched(cycles, Abw, current_layer, NN,
                             vec_cyc.shape[0],
                             torch.prod(NN.layers[current_layer].output_shape),
                         ),
-                        batch_size = fwd_batch_size, out_device='cpu')                                  
+                        batch_size = fwd_batch_size, device=device, out_device='cpu')                                  
     
     
     n_hyps  = torch.prod(NN.layers[current_layer].output_shape)
@@ -139,6 +139,12 @@ def get_partitions_with_db(
     Abw_batch_size = 16,
     device = 'cuda',
 ):
+    """
+    Get all partitions in the domain, as well as the decision boundary.
+    
+    Returns:
+      regions, decision boundary edges, Abw
+    """
     
     poly = (T[...,:-1].T @ (domain.T - T[...,-1:])).T
     poly = poly.type(torch.float64)
@@ -225,12 +231,15 @@ def get_partitions_with_db(
     elapsed_time = time.time()-start_time
     print(f'Time elapsed {elapsed_time/60:.3f} minutes')
     
+    ### Get decision boundary
+    
     try:
         hyp2input,endpoints = to_next_layer_partition_batched(out_cyc, Abw, -1, NN,
                                         dtype=torch.float64, device=device,
                                         batch_size=batch_size,
                                         fwd_batch_size=fwd_batch_size)
-    except:
-        endpoints = [None]
+    except Exception as e:
+        print(e)
+        endpoints = []
         
-    return out_cyc,endpoints,Abw
+    return out_cyc, endpoints, Abw
